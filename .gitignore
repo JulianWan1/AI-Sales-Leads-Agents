@@ -1,0 +1,68 @@
+# Python
+
+**pycache**/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+
+venv/
+.env/
+.venv/
+
+# Environment Variables
+
+.env
+
+# SQLite Database
+
+*.db
+*.sqlite3
+
+# Logs
+
+*.log
+
+# macOS
+
+.DS_Store
+
+# VSCode
+
+.vscode/
+
+# JetBrains IDEs
+
+.idea/
+
+# Streamlit
+
+.streamlit/secrets.toml
+
+# Python Packaging
+
+build/
+dist/
+*.egg-info/
+
+# Coverage / Testing
+
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Mypy
+
+.mypy_cache/
+
+# Ruff
+
+.ruff_cache/
+
+# Docker
+
+*.pid
+
+# Misc
+
+.cache/
