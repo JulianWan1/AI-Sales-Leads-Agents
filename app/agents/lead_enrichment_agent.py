@@ -5,6 +5,7 @@ from app.services.openai_service import client
 import time
 
 from app.services.logger import logger
+from app.utils.context_serializer import serialize_business_context
 
 
 def enrich_leads(context, leads):
@@ -25,7 +26,10 @@ def enrich_leads(context, leads):
     - recommended_sales_angle
 
     Business Context:
-    {json.dumps(context, indent=2)}
+    {json.dumps(
+        serialize_business_context(context),
+        indent=2
+    )}
 
     Leads:
     {json.dumps(leads, indent=2)}

@@ -19,13 +19,13 @@ def generate_leads(context):
     Generate 5 high-quality potential sales leads.
 
     Business Industry:
-    {context['industry']}
+    {context.industry}
 
     Ideal Customer:
-    {context['ideal_customer']}
+    {context.ideal_customer}
 
     Product:
-    {context['product']}
+    {context.product}
 
     Return ONLY valid JSON.
 

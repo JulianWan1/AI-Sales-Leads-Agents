@@ -5,6 +5,7 @@ from app.services.openai_service import client
 import time
 
 from app.services.logger import logger
+from app.utils.context_serializer import serialize_business_context
 
 
 def score_leads(context, enriched_leads):
@@ -30,7 +31,10 @@ def score_leads(context, enriched_leads):
     - exclusivity potential
 
     Business Context:
-    {json.dumps(context, indent=2)}
+    {json.dumps(
+        serialize_business_context(context),
+        indent=2
+    )}
 
     Enriched Leads:
     {json.dumps(enriched_leads, indent=2)}

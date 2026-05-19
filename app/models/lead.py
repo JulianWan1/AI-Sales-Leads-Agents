@@ -1,9 +1,7 @@
-from sqlalchemy import Column
-from sqlalchemy import Integer
-from sqlalchemy import String
-from sqlalchemy import Text
+from sqlalchemy import Column, Integer, String, Text, DateTime
+from sqlalchemy.sql import func
 
-from app.db.database import Base
+from app.core.database import Base
 
 
 class Lead(Base):
@@ -12,13 +10,14 @@ class Lead(Base):
 
     id = Column(Integer, primary_key=True, index=True)
 
-    company = Column(String)
+    company = Column(String, nullable=False)
     contact = Column(String)
     role = Column(String)
 
     interest = Column(String)
 
     estimated_budget = Column(Integer)
+
     purchase_likelihood = Column(String)
 
     qualification_signals = Column(Text)
@@ -36,3 +35,11 @@ class Lead(Base):
     likely_objections = Column(Text)
 
     recommended_next_action = Column(Text)
+
+    status = Column(String, default="new")
+
+    source = Column(String, default="manual")
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())

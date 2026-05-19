@@ -1,16 +1,21 @@
-from fastapi import APIRouter
-from app.models.business_context import BusinessContext
-from app.services.context_store import business_context_memory
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
+from app.core.database import get_db
+
+from app.schemas.business_context import BusinessContextCreate
+
+from app.services.business_context_service import create_business_context
 
 router = APIRouter()
 
 
 @router.post("/business-context")
-def set_business_context(context: BusinessContext):
+def set_business_context(context: BusinessContextCreate, db: Session = Depends(get_db)):
 
-    business_context_memory["context"] = context.dict()
+    saved_context = create_business_context(db, context.model_dump())
 
     return {
         "message": "Business context stored successfully",
-        "context": business_context_memory["context"],
+        "context_id": saved_context.id,
     }
