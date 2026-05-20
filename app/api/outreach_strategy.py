@@ -1,13 +1,15 @@
-from fastapi import APIRouter
+import re
+from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends
 
-from app.services.context_store import business_context_memory
-
+from app.core.database import get_db
+from app.services.logger import logger
 from app.agents.lead_discovery_agent import generate_leads
 from app.agents.lead_enrichment_agent import enrich_leads
 from app.agents.lead_scoring_agent import score_leads
 from app.agents.outreach_strategy_agent import generate_outreach_strategies
 from app.services.lead_persistence_service import save_leads
-from app.services.logger import logger
+from app.services.business_context_service import get_latest_business_context
 
 router = APIRouter()
 
@@ -20,6 +22,15 @@ def clean_final_leads(leads):
 
     for lead in leads:
 
+        # convert budget from response to int (response may be in str format prepended with '$' sign)
+        budget = lead.get("estimated_budget")
+
+        if isinstance(budget, str):
+
+            cleaned_budget = re.sub(r"[^\d]", "", budget)
+
+            lead["estimated_budget"] = int(cleaned_budget) if cleaned_budget else None
+
         cleaned_lead = {
             key: value for key, value in lead.items() if key not in fields_to_remove
         }
@@ -30,11 +41,11 @@ def clean_final_leads(leads):
 
 
 @router.post("/generate-strategies")
-def outreach_strategy_pipeline():
+def outreach_strategy_pipeline(db: Session = Depends(get_db)):
 
     logger.info("Starting full AI sales pipeline")
 
-    context = business_context_memory.get("context")
+    context = context = get_latest_business_context(db)
 
     if not context:
         return {"error": "Business context not found"}
@@ -54,7 +65,7 @@ def outreach_strategy_pipeline():
     # Remove redundant fields
     final_leads = clean_final_leads(final_leads)
 
-    save_leads(final_leads)
+    save_leads(db, final_leads)
 
     logger.info(f"Pipeline completed successfully with {len(final_leads)} leads")
 

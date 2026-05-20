@@ -5,6 +5,7 @@ from app.services.openai_service import client
 import time
 
 from app.services.logger import logger
+from app.utils.context_serializer import serialize_business_context
 
 
 def generate_outreach_strategies(context, scored_leads):
@@ -28,7 +29,10 @@ def generate_outreach_strategies(context, scored_leads):
     Preserve ALL existing lead fields.
 
     Business Context:
-    {json.dumps(context, indent=2)}
+    {json.dumps(
+        serialize_business_context(context),
+        indent=2
+    )}
 
     Scored Leads:
     {json.dumps(scored_leads, indent=2)}
