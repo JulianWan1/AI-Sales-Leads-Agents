@@ -16,26 +16,19 @@ router = APIRouter()
 
 def clean_final_leads(leads):
 
-    fields_to_remove = ["budget_signal", "priority"]
-
     cleaned_leads = []
 
     for lead in leads:
 
-        # convert budget from response to int (response may be in str format prepended with '$' sign)
         budget = lead.get("estimated_budget")
 
         if isinstance(budget, str):
 
             cleaned_budget = re.sub(r"[^\d]", "", budget)
 
-            lead["estimated_budget"] = int(cleaned_budget) if cleaned_budget else None
+            lead["estimated_budget"] = int(cleaned_budget) if cleaned_budget else 0
 
-        cleaned_lead = {
-            key: value for key, value in lead.items() if key not in fields_to_remove
-        }
-
-        cleaned_leads.append(cleaned_lead)
+        cleaned_leads.append(lead)
 
     return cleaned_leads
 

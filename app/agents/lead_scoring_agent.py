@@ -18,17 +18,59 @@ def score_leads(context, enriched_leads):
     You are a sales lead scoring AI.
 
     Based on the business context and enriched leads below,
-		preserve ALL existing lead fields and assign each lead:
+    preserve ALL existing lead fields and assign each lead:
 
     - lead_score (0-100)
+    Scoring guidance:
+        - 80-100 → strong verified lead
+        - 60-79 → moderate opportunity
+        - 40-59 → weak/incomplete lead
+        - below 40 → low confidence or poor fit
     - priority
     - score_reasoning
 
-    Prioritize:
+    IMPORTANT SCORING RULES:
+
+    You MUST score leads STRICTLY based on the provided workflow state.
+
+    Do NOT assume information that is not explicitly present.
+
+    Research confidence should significantly influence:
+    - scoring confidence
+    - purchase likelihood
+    - priority
+
+    Example, if:
+    - research_confidence is "low"
+    - detected_industry is "Unknown"
+    - estimated_budget is 0
+    - budget_signal is "None"
+
+    then scoring confidence and lead quality should be reduced accordingly.
+
+    Missing or weak research data MUST negatively impact:
+    - lead_score
+    - purchase_likelihood
+    - priority
+
+    Qualification signals MUST reference ONLY existing lead fields.
+
+    Do NOT invent:
     - budget fit
-    - buying intent
     - industry alignment
-    - exclusivity potential
+    - buying intent
+    - exclusivity indicators
+
+    unless explicitly supported by the workflow state.
+
+    Do NOT describe budget fit or budget signals
+    unless:
+    - budget_signal is explicitly positive
+    OR
+    - estimated_budget is meaningfully above zero.
+
+    If evidence is weak or incomplete,
+    the scoring should be conservative.
 
     Business Context:
     {json.dumps(

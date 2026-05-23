@@ -48,42 +48,101 @@ if generate_button:
 
     for lead in final_leads:
 
-        with st.expander(f"{lead['company']} — Score: {lead['lead_score']}"):
+        with st.expander(
+            f"{lead['company']} — Score: {lead['lead_score']} ({lead.get('priority', 'N/A')})"
+        ):
 
-            st.write(f"**Contact:** {lead['contact']}")
-            st.write(f"**Role:** {lead['role']}")
-            st.write(f"**Interest:** {lead['interest']}")
+            # ==================================================
+            # Lead Identity
+            # ==================================================
 
-            st.write(f"**Estimated Budget:** ${lead['estimated_budget']}")
+            st.subheader("Lead Identity")
 
-            st.write(f"**Purchase Likelihood:** {lead['purchase_likelihood']}")
+            st.write(f"**Contact:** {lead.get('contact')}")
+            st.write(f"**Role:** {lead.get('role')}")
 
-            st.write(f"**Lead Score:** {lead['lead_score']}")
+            st.write("**Company Summary:**")
+            st.info(lead.get("company_summary"))
 
-            st.write(f"**Score Reasoning:** {lead['score_reasoning']}")
+            st.divider()
 
-            st.write(f"**Recommended Sales Angle:**")
+            # ==================================================
+            # Research Intelligence
+            # ==================================================
 
-            st.info(lead["recommended_sales_angle"])
+            st.subheader("Research Intelligence")
+
+            st.write(f"**Detected Industry:** {lead.get('detected_industry')}")
+
+            st.write(f"**Specialization:** {lead.get('specialization')}")
+
+            st.write(f"**Research Confidence:** {lead.get('research_confidence')}")
+
+            st.write(f"**Interest:** {lead.get('interest')}")
+
+            st.write(f"**Budget Signal:** {lead.get('budget_signal')}")
+
+            st.write(f"**Estimated Budget:** ${lead.get('estimated_budget')}")
+
+            sources = lead.get("sources", [])
+
+            if sources:
+                st.write("**Sources:**")
+                for url in sources:
+                    st.markdown(f"- [{url}]({url})")
+
+            st.divider()
+
+            # ==================================================
+            # Scoring & Qualification
+            # ==================================================
+
+            st.subheader("Scoring & Qualification")
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                st.metric("Lead Score", lead.get("lead_score"))
+
+            with col2:
+                st.metric("Priority", lead.get("priority"))
+
+            st.write(f"**Purchase Likelihood:** " f"{lead.get('purchase_likelihood')}")
 
             st.write("**Qualification Signals:**")
 
-            for signal in lead["qualification_signals"]:
+            for signal in lead.get("qualification_signals", []):
                 st.write(f"- {signal}")
+
+            st.write("**Score Reasoning:**")
+
+            st.warning(lead.get("score_reasoning"))
+
+            st.divider()
+
+            # ==================================================
+            # Outreach Strategy
+            # ==================================================
+
+            st.subheader("Outreach Strategy")
+
+            st.write("**Recommended Sales Angle:**")
+
+            st.success(lead.get("recommended_sales_angle"))
 
             st.write("**Outreach Strategy:**")
 
-            st.success(lead["outreach_strategy"])
+            st.success(lead.get("outreach_strategy"))
 
-            st.write(f"**Conversation Starter:**")
+            st.write("**Conversation Starter:**")
 
-            st.code(lead["conversation_starter"])
+            st.code(lead.get("conversation_starter"), language="text")
 
             st.write("**Likely Objections:**")
 
-            for objection in lead["likely_objections"]:
+            for objection in lead.get("likely_objections", []):
                 st.write(f"- {objection}")
 
-            st.write(f"**Recommended Next Action:**")
+            st.write("**Recommended Next Action:**")
 
-            st.warning(lead["recommended_next_action"])
+            st.error(lead.get("recommended_next_action"))

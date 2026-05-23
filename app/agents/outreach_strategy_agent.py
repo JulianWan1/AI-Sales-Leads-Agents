@@ -4,6 +4,7 @@ from app.services.openai_service import client
 
 import time
 
+from app.schemas.lead import LeadList
 from app.services.logger import logger
 from app.utils.context_serializer import serialize_business_context
 
@@ -40,19 +41,17 @@ def generate_outreach_strategies(context, scored_leads):
     Return ONLY valid JSON.
     """
 
-    response = client.chat.completions.create(
+    response = client.beta.chat.completions.parse(
         model="gpt-4.1-mini",
         messages=[{"role": "user", "content": prompt}],
+        response_format=LeadList,
         temperature=0.5,
     )
-
-    content = response.choices[0].message.content.strip()
-
-    content = content.replace("```json", "")
-    content = content.replace("```", "")
 
     execution_time = round(time.time() - start_time, 2)
 
     logger.info(f"Outreach strategy completed in {execution_time}s")
 
-    return json.loads(content)
+    parsed = response.choices[0].message.parsed
+
+    return parsed.model_dump()["leads"]

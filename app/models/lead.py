@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime
+from sqlalchemy import Column, Integer, String, Text, DateTime, JSON
 from sqlalchemy.sql import func
 
 from app.core.database import Base
@@ -18,6 +18,18 @@ class Lead(Base):
 
     estimated_budget = Column(Integer)
 
+    company_summary = Column(Text)
+
+    specialization = Column(Text)
+
+    detected_industry = Column(String)
+
+    research_confidence = Column(String)
+
+    priority = Column(String)
+
+    budget_signal = Column(String)
+
     purchase_likelihood = Column(String)
 
     qualification_signals = Column(Text)
@@ -35,6 +47,8 @@ class Lead(Base):
     likely_objections = Column(Text)
 
     recommended_next_action = Column(Text)
+
+    sources = Column(JSON)
 
     status = Column(String, default="new")
 
