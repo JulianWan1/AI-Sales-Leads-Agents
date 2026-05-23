@@ -57,6 +57,11 @@ positive signals are present in the enrichment data:
 
 When calling the tool, use a targeted focus (e.g. "recent funding", "expansion news").
 
+If the search returns meaningful information, treat `research_confidence` as upgraded
+(low → medium, medium → high) when applying the scoring guidance. Also, score based on the
+totality of evidence now available — enrichment data plus the meaningful information from search results — not the
+pre-search confidence label.
+
 **Branch 3 — Score directly but conservatively:**
 Use this when `research_confidence` is "low" or "medium" AND fewer than two positive signals
 are present. Enrichment was incomplete and there is nothing meaningful to verify; score low.
@@ -72,7 +77,8 @@ are present. Enrichment was incomplete and there is nothing meaningful to verify
 {
   "lead_score": <integer 0-100>,
   "priority": "High | Medium | Low",
-  "score_reasoning": "Concise explanation citing specific evidence from the enrichment data"
+  "score_reasoning": "Concise explanation citing specific evidence from the enrichment data",
+  "research_confidence": "upgraded value — include ONLY if you took Branch 2 AND the search returned meaningful information. Upgrade by one level: low → medium, medium → high. Omit this field entirely in all other cases."
 }
 
 priority guidance:
@@ -80,7 +86,7 @@ priority guidance:
 - Medium → lead_score 40–69
 - Low → lead_score below 40
 
-IMPORTANT: Return ONLY these three fields. All other lead fields are preserved separately."""
+IMPORTANT: Return ONLY the fields listed above. Omit `research_confidence` unless Branch 2 was taken and the search was informative. All other lead fields are preserved separately."""
 
 
 def _build_user_prompt(context, lead):
