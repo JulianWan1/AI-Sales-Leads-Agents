@@ -22,7 +22,8 @@ def extract_website_content(url: str) -> dict:
         results = data.get("results", [])
 
         if results:
-            return {"success": True, "content": results[0].get("raw_content", "")}
+            content = results[0].get("raw_content", "")[:8000]
+            return {"success": True, "content": content}
 
         return {"success": False, "error": "No content extracted"}
 
