@@ -5,9 +5,7 @@ from fastapi import APIRouter, Depends
 from app.core.database import get_db
 from app.services.logger import logger
 from app.agents.lead_discovery_agent import generate_leads
-from app.agents.lead_enrichment_agent import enrich_leads
-from app.agents.lead_scoring_agent import score_leads
-from app.agents.outreach_strategy_agent import generate_outreach_strategies
+from app.agents.orchestrator_agent import orchestrate_pipeline
 from app.services.lead_persistence_service import save_leads
 from app.services.business_context_service import get_latest_business_context
 
@@ -46,14 +44,8 @@ def outreach_strategy_pipeline(db: Session = Depends(get_db)):
     # Step 3 — Lead Discovery
     discovered_leads = generate_leads(context)
 
-    # Step 4 — Lead Enrichment
-    enriched_leads = enrich_leads(context, discovered_leads)
-
-    # Step 5 — Lead Scoring
-    scored_leads = score_leads(context, enriched_leads)
-
-    # Step 6 — Outreach Strategy
-    final_leads = generate_outreach_strategies(context, scored_leads)
+    # Step 4 — Orchestrate: enrich, score, re-enrich if needed, outreach (per lead)
+    final_leads = orchestrate_pipeline(context, discovered_leads)
 
     # Remove redundant fields
     final_leads = clean_final_leads(final_leads)
