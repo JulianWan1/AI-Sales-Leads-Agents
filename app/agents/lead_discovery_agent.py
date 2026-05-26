@@ -5,7 +5,6 @@ from app.services.openai_service import client
 from app.services.logger import logger
 from app.tools.tavily_search_tool import tavily_search
 
-
 MAX_TOOL_ITERATIONS = 8
 
 TOOLS = [
@@ -44,12 +43,14 @@ You have one tool:
 Discovery process:
 1. Run multiple searches using different angles — vary by geography, company type, industry segment, or use case
 2. Collect real company names from the search results
-3. Once you have enough leads (aim for 5), return them as JSON
+3. Once you have enough leads (aim for 6), return them as JSON
 
 Rules:
 - Company names MUST come from search results — do NOT invent companies
 - Prefer companies strongly aligned with the ideal customer profile and product fit
 - Return only the company name — qualification happens in a later stage
+- Before returning your final list, review all entries and remove any that appear to be the same entity under a different name or abbreviation (e.g. "European Prestige" and "European Prestige Car Sales" are the same company — keep only the most complete, official version)
+- Each entry must represent a clearly distinct company
 
 Output format (return ONLY a valid JSON array, no markdown):
 [
@@ -68,6 +69,45 @@ Business Context:
 - Ideal Customer: {context.ideal_customer}
 
 Run multiple searches from different angles to find real companies that match this profile, then return the lead list as JSON."""
+
+
+def _deduplicate_leads(leads):
+    if len(leads) <= 1:
+        return leads
+
+    response = client.chat.completions.create(
+        model="gpt-4.1-mini",
+        messages=[
+            {
+                "role": "user",
+                "content": f"""Review this list of companies and remove any that are clearly the same entity under different names or abbreviations.
+
+                Companies:
+                {json.dumps(leads, indent=2)}
+
+                Rules:
+                - If two entries refer to the same company, keep only the most complete, official version of the name
+                - Each remaining entry must represent a clearly distinct company
+
+                Return ONLY a valid JSON array in the same format, no markdown:
+                [{{"company": "Company Name"}}]""",
+            }
+        ],
+        temperature=0.1,
+    )
+
+    content = (
+        response.choices[0]
+        .message.content.strip()
+        .replace("```json", "")
+        .replace("```", "")
+    )
+    deduped = json.loads(content)
+    if len(deduped) < len(leads):
+        logger.info(
+            f"Deduplication removed {len(leads) - len(deduped)} duplicate(s): {len(leads)} → {len(deduped)} leads"
+        )
+    return deduped
 
 
 def _dispatch_tool(tool_call):
@@ -108,7 +148,7 @@ def generate_leads(context):
 
         if response.choices[0].finish_reason == "stop":
             content = msg.content.strip().replace("```json", "").replace("```", "")
-            leads = json.loads(content)[:5]
+            leads = _deduplicate_leads(json.loads(content))[:5]
             execution_time = round(time.time() - start_time, 2)
             logger.info(
                 f"Lead discovery completed in {execution_time}s — "
