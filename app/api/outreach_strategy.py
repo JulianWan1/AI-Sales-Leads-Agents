@@ -6,6 +6,7 @@ from app.core.database import get_db
 from app.services.logger import logger
 from app.agents.lead_discovery_agent import generate_leads
 from app.agents.orchestrator_agent import orchestrate_pipeline
+from app.models.lead import Lead
 from app.services.lead_persistence_service import save_leads
 from app.services.business_context_service import get_latest_business_context
 
@@ -43,6 +44,13 @@ def outreach_strategy_pipeline(db: Session = Depends(get_db)):
 
     # Step 3 — Lead Discovery
     discovered_leads = generate_leads(context)
+
+    # Filter out companies already in DB before the expensive pipeline
+    existing_companies = {row[0] for row in db.query(Lead.company).all()}
+    discovered_leads = [l for l in discovered_leads if l.get("company") not in existing_companies]
+
+    if not discovered_leads:
+        return {"business_context": context, "total_leads": 0, "final_leads": []}
 
     # Step 4 — Orchestrate: enrich, score, re-enrich if needed, outreach (per lead)
     final_leads = orchestrate_pipeline(context, discovered_leads)
