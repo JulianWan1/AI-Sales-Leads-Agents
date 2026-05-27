@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -66,7 +67,8 @@ STALE_DAYS = 30
 @router.post("/re-enrich-stale")
 def re_enrich_stale(db: Session = Depends(get_db)):
     cutoff = datetime.now(timezone.utc) - timedelta(days=STALE_DAYS)
-    stale_leads = db.query(Lead).filter(Lead.created_at < cutoff).all()
+    effective_date = func.coalesce(Lead.last_enriched_at, Lead.created_at)
+    stale_leads = db.query(Lead).filter(effective_date < cutoff).all()
     if not stale_leads:
         return {"message": "No stale leads found", "updated": 0}
     context = get_latest_business_context(db)
@@ -74,5 +76,5 @@ def re_enrich_stale(db: Session = Depends(get_db)):
         return {"message": "No business context found", "updated": 0}
     discovered = [{"company": lead.company} for lead in stale_leads]
     refreshed = orchestrate_pipeline(context, discovered)
-    updated = save_leads(db, clean_final_leads(refreshed))
+    updated = save_leads(db, clean_final_leads(refreshed), upsert=True)
     return {"message": f"Re-enriched {len(updated)} leads", "updated": len(updated)}

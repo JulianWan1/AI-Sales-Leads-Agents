@@ -14,7 +14,7 @@ st.title("AI Sales Lead Agent")
 st.markdown("Generate, qualify, score, and strategize sales leads using AI agents.")
 
 
-def render_lead_card(lead, i, session_list_key, key_prefix):
+def render_lead_card(lead, i, session_list_key, key_prefix, show_status=True):
     """Render a single lead expander card. key_prefix prevents widget key collisions across tabs."""
 
     with st.expander(
@@ -26,7 +26,7 @@ def render_lead_card(lead, i, session_list_key, key_prefix):
         # ==================================================
 
         lead_id = lead.get("id")
-        if lead_id:
+        if lead_id and show_status:
             current_status = lead.get("status", "new")
             widget_key = f"status_{key_prefix}_{lead_id}"
             reset_key = f"reset_{key_prefix}_{lead_id}"
@@ -184,7 +184,7 @@ with tab1:
     if final_leads:
         st.subheader(f"Generated Leads ({len(final_leads)})")
         for i, lead in enumerate(final_leads):
-            render_lead_card(lead, i, "final_leads", "gen")
+            render_lead_card(lead, i, "final_leads", "gen", show_status=False)
 
 
 # ==============================================================
