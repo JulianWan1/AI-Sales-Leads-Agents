@@ -3,6 +3,8 @@ import streamlit as st
 
 FASTAPI_URL = "http://127.0.0.1:8000"
 
+STATUS_OPTIONS = ["new", "contacted", "replied", "qualified", "closed", "lost"]
+
 
 st.set_page_config(page_title="AI Sales Lead Agent", layout="wide")
 
@@ -36,21 +38,62 @@ if generate_button:
     requests.post(f"{FASTAPI_URL}/business-context", json=context_payload)
 
     # Step 2 — Trigger Full Pipeline
-    response = requests.post(f"{FASTAPI_URL}/generate-strategies")
+    with st.spinner("Running AI pipeline..."):
+        response = requests.post(f"{FASTAPI_URL}/generate-strategies")
 
     data = response.json()
 
+    # Store leads in session state so they survive re-renders from status updates
+    st.session_state["final_leads"] = data.get("final_leads", [])
+
     st.success("Lead generation completed.")
 
-    final_leads = data.get("final_leads", [])
+
+# Render leads from session state (persists across re-renders)
+final_leads = st.session_state.get("final_leads", [])
+
+if final_leads:
 
     st.subheader("Generated Leads")
 
-    for lead in final_leads:
+    for i, lead in enumerate(final_leads):
 
         with st.expander(
             f"{lead['company']} — Score: {lead['lead_score']} ({lead.get('priority', 'N/A')})"
         ):
+
+            # ==================================================
+            # Lead Status
+            # ==================================================
+
+            lead_id = lead.get("id")
+            if lead_id:
+                current_status = lead.get("status", "new")
+                new_status = st.selectbox(
+                    "Status",
+                    STATUS_OPTIONS,
+                    index=STATUS_OPTIONS.index(current_status) if current_status in STATUS_OPTIONS else 0,
+                    key=f"status_{lead_id}",
+                )
+                if new_status != current_status:
+                    update_col, revert_col = st.columns(2)
+                    with update_col:
+                        if st.button("Update", key=f"update_{lead_id}"):
+                            r = requests.patch(
+                                f"{FASTAPI_URL}/leads/{lead_id}/status",
+                                json={"status": new_status},
+                            )
+                            if r.ok:
+                                st.session_state["final_leads"][i]["status"] = new_status
+                                st.success(f"Status updated to '{new_status}'")
+                            else:
+                                st.error("Update failed")
+                    with revert_col:
+                        if st.button("Revert", key=f"revert_{lead_id}"):
+                            st.session_state[f"status_{lead_id}"] = current_status
+                            st.rerun()
+
+            st.divider()
 
             # ==================================================
             # Lead Identity

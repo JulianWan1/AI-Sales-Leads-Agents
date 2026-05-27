@@ -50,7 +50,7 @@ def outreach_strategy_pipeline(db: Session = Depends(get_db)):
     # Remove redundant fields
     final_leads = clean_final_leads(final_leads)
 
-    save_leads(db, final_leads)
+    final_leads = save_leads(db, final_leads)
 
     logger.info(f"Pipeline completed successfully with {len(final_leads)} leads")
 
