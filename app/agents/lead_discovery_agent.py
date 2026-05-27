@@ -1,5 +1,7 @@
 import json
+import re
 import time
+from difflib import SequenceMatcher
 
 from app.services.openai_service import client
 from app.services.logger import logger
@@ -71,38 +73,47 @@ Business Context:
 Run multiple searches from different angles to find real companies that match this profile, then return the lead list as JSON."""
 
 
+_SUFFIX_PATTERN = re.compile(
+    r"\b(ltd|limited|inc|incorporated|corp|corporation|llc|llp|gmbh|plc|co|company|group|holdings|international|uk|us|usa)\b",
+    re.IGNORECASE,
+)
+
+
+def _normalize(name):
+    name = name.lower().strip()
+    name = _SUFFIX_PATTERN.sub("", name)
+    name = re.sub(r"[^a-z0-9\s]", "", name)
+    return re.sub(r"\s+", " ", name).strip()
+
+
 def _deduplicate_leads(leads):
     if len(leads) <= 1:
         return leads
 
-    response = client.chat.completions.create(
-        model="gpt-4.1-mini",
-        messages=[
-            {
-                "role": "user",
-                "content": f"""Review this list of companies and remove any that are clearly the same entity under different names or abbreviations.
+    names = [lead["company"] for lead in leads]
+    fingerprints = [_normalize(n) for n in names]
+    keep = [True] * len(leads)
 
-                Companies:
-                {json.dumps(leads, indent=2)}
+    for i in range(len(leads)):
+        if not keep[i]:
+            continue
+        for j in range(i + 1, len(leads)):
+            if not keep[j]:
+                continue
+            fp_i, fp_j = fingerprints[i], fingerprints[j]
+            is_duplicate = (
+                fp_i in fp_j
+                or fp_j in fp_i
+                or SequenceMatcher(None, fp_i, fp_j).ratio() >= 0.85
+            )
+            if is_duplicate:
+                if len(names[i]) >= len(names[j]):
+                    keep[j] = False
+                else:
+                    keep[i] = False
+                    break
 
-                Rules:
-                - If two entries refer to the same company, keep only the most complete, official version of the name
-                - Each remaining entry must represent a clearly distinct company
-
-                Return ONLY a valid JSON array in the same format, no markdown:
-                [{{"company": "Company Name"}}]""",
-            }
-        ],
-        temperature=0.1,
-    )
-
-    content = (
-        response.choices[0]
-        .message.content.strip()
-        .replace("```json", "")
-        .replace("```", "")
-    )
-    deduped = json.loads(content)
+    deduped = [lead for lead, k in zip(leads, keep) if k]
     if len(deduped) < len(leads):
         logger.info(
             f"Deduplication removed {len(leads) - len(deduped)} duplicate(s): {len(leads)} → {len(deduped)} leads"
