@@ -206,7 +206,9 @@ with tab2:
     with f_col4:
         f_score = st.slider("Score range", 0, 100, (0, 100), key="hist_score")
 
-    if st.button("Load Leads", key="hist_load"):
+    load_col, reenrich_col = st.columns([1, 1])
+
+    if load_col.button("Load Leads", key="hist_load"):
         params = {
             "score_min": f_score[0],
             "score_max": f_score[1],
@@ -220,6 +222,15 @@ with tab2:
 
         r = requests.get(f"{FASTAPI_URL}/leads/", params=params)
         st.session_state["history_leads"] = r.json() if r.ok else []
+
+    if reenrich_col.button("Re-enrich Stale Leads", key="hist_reenrich"):
+        with st.spinner("Re-enriching stale leads..."):
+            r = requests.post(f"{FASTAPI_URL}/leads/re-enrich-stale")
+        if r.ok:
+            result = r.json()
+            st.toast(result["message"], icon="✅")
+        else:
+            st.error("Re-enrichment failed")
 
     history_leads = st.session_state.get("history_leads", [])
 

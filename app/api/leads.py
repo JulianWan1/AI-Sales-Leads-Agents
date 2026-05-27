@@ -1,9 +1,15 @@
+from datetime import datetime, timedelta, timezone
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from app.agents.orchestrator_agent import orchestrate_pipeline
+from app.api.outreach_strategy import clean_final_leads
 from app.core.database import get_db
 from app.models.lead import Lead
+from app.services.business_context_service import get_latest_business_context
+from app.services.lead_persistence_service import save_leads
 
 router = APIRouter()
 
@@ -52,3 +58,21 @@ def update_lead_status(lead_id: int, payload: StatusUpdate, db: Session = Depend
     lead.status = payload.status
     db.commit()
     return {"id": lead_id, "status": payload.status}
+
+
+STALE_DAYS = 30
+
+
+@router.post("/re-enrich-stale")
+def re_enrich_stale(db: Session = Depends(get_db)):
+    cutoff = datetime.now(timezone.utc) - timedelta(days=STALE_DAYS)
+    stale_leads = db.query(Lead).filter(Lead.created_at < cutoff).all()
+    if not stale_leads:
+        return {"message": "No stale leads found", "updated": 0}
+    context = get_latest_business_context(db)
+    if not context:
+        return {"message": "No business context found", "updated": 0}
+    discovered = [{"company": lead.company} for lead in stale_leads]
+    refreshed = orchestrate_pipeline(context, discovered)
+    updated = save_leads(db, clean_final_leads(refreshed))
+    return {"message": f"Re-enriched {len(updated)} leads", "updated": len(updated)}
