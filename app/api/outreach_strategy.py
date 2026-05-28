@@ -42,7 +42,7 @@ def outreach_strategy_pipeline(db: Session = Depends(get_db)):
     if not context:
         return {"error": "Business context not found"}
 
-    # Step 3 — Lead Discovery
+    # Step 1 — Lead Discovery
     discovered_leads = generate_leads(context)
 
     # Filter out companies already in DB before the expensive pipeline
@@ -52,10 +52,10 @@ def outreach_strategy_pipeline(db: Session = Depends(get_db)):
     if not discovered_leads:
         return {"business_context": context, "total_leads": 0, "final_leads": []}
 
-    # Step 4 — Orchestrate: enrich, score, re-enrich if needed, outreach (per lead)
+    # Step 2 — Orchestrate: enrich, score, re-enrich if needed, outreach (per lead)
     final_leads = orchestrate_pipeline(context, discovered_leads)
 
-    # Remove redundant fields
+    # normalize estimated_budget to integer
     final_leads = clean_final_leads(final_leads)
 
     final_leads = save_leads(db, final_leads)

@@ -20,7 +20,7 @@ def _orchestrate_single_lead(context, company_name):
 
     lead_state = {"company": company_name}
 
-    result = _enrich_single_lead(context, lead_state)
+    result = _enrich_single_lead(context, lead_state.copy())
     lead_state.update(result)
 
     if _is_fallback(lead_state):
