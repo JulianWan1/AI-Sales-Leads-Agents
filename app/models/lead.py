@@ -32,7 +32,7 @@ class Lead(Base):
 
     purchase_likelihood = Column(String)
 
-    qualification_signals = Column(Text)
+    qualification_signals = Column(JSON)
 
     recommended_sales_angle = Column(Text)
 
@@ -44,7 +44,7 @@ class Lead(Base):
 
     conversation_starter = Column(Text)
 
-    likely_objections = Column(Text)
+    likely_objections = Column(JSON)
 
     recommended_next_action = Column(Text)
 
