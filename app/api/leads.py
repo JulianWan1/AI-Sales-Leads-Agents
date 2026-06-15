@@ -75,6 +75,6 @@ def re_enrich_stale(db: Session = Depends(get_db)):
     if not context:
         return {"message": "No business context found", "updated": 0}
     discovered = [{"company": lead.company} for lead in stale_leads]
-    refreshed = orchestrate_pipeline(context, discovered)
-    updated = save_leads(db, clean_final_leads(refreshed), upsert=True)
+    pipeline = orchestrate_pipeline(context, discovered)
+    updated = save_leads(db, clean_final_leads(pipeline["leads"]), upsert=True)
     return {"message": f"Re-enriched {len(updated)} leads", "updated": len(updated)}

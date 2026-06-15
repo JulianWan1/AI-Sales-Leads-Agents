@@ -175,7 +175,11 @@ def _enrich_single_lead(context, lead):
 
         if response.choices[0].finish_reason == "stop":
             content = msg.content.strip().replace("```json", "").replace("```", "")
-            enrichment = json.loads(content)
+            try:
+                enrichment = json.loads(content)
+            except (json.JSONDecodeError, ValueError):
+                logger.warning(f"Failed to parse enrichment JSON for {company_name}, using fallback")
+                return _fallback_enrichment(lead)
             logger.info(
                 f"Enriched {company_name} "
                 f"(confidence={enrichment.get('research_confidence')}, "
