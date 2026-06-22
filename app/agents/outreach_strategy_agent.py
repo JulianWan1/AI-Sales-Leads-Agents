@@ -128,7 +128,11 @@ def _generate_single_outreach(context, lead):
 
         if response.choices[0].finish_reason == "stop":
             content = msg.content.strip().replace("```json", "").replace("```", "")
-            outreach = json.loads(content)
+            try:
+                outreach = json.loads(content)
+            except (json.JSONDecodeError, ValueError):
+                logger.warning(f"Failed to parse outreach JSON for {company_name}, using fallback")
+                return _fallback_outreach(lead)
             logger.info(
                 f"Outreach generated for {company_name} "
                 f"(priority={lead.get('priority')}, iterations={iteration + 1})"

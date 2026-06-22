@@ -76,7 +76,11 @@ def _score_single_lead(context, lead):
         return _fallback_score(lead)
 
     content = content.strip().replace("```json", "").replace("```", "")
-    score = json.loads(content)
+    try:
+        score = json.loads(content)
+    except (json.JSONDecodeError, ValueError):
+        logger.warning(f"Failed to parse scoring JSON for {company_name}, using fallback")
+        return _fallback_score(lead)
     logger.info(
         f"Scored {company_name}: "
         f"score={score.get('lead_score')}, "

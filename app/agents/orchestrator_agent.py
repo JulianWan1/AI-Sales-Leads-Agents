@@ -53,17 +53,20 @@ def orchestrate_pipeline(context, discovered_leads):
     logger.info("Starting orchestrator agent")
 
     results = []
+    dropped = 0
     for lead in discovered_leads:
         result = _orchestrate_single_lead(context, lead["company"])
         if result:
             results.append(result)
+        else:
+            dropped += 1
 
     results = sorted(results, key=lambda x: x.get("lead_score", 0), reverse=True)
 
     execution_time = round(time.time() - start_time, 2)
     logger.info(
         f"Orchestrator completed in {execution_time}s — "
-        f"{len(results)}/{len(discovered_leads)} leads processed"
+        f"{len(results)}/{len(discovered_leads)} leads processed, {dropped} dropped"
     )
 
-    return results
+    return {"leads": results, "dropped": dropped}

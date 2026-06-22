@@ -37,26 +37,38 @@ def outreach_strategy_pipeline(db: Session = Depends(get_db)):
 
     logger.info("Starting full AI sales pipeline")
 
-    context = context = get_latest_business_context(db)
+    context = get_latest_business_context(db)
 
     if not context:
         return {"error": "Business context not found"}
 
     # Step 1 — Lead Discovery
-    discovered_leads = generate_leads(context)
+    raw_discovered = generate_leads(context)
+    raw_count = len(raw_discovered)
 
     # Filter out companies already in DB before the expensive pipeline
     existing_companies = {row[0] for row in db.query(Lead.company).all()}
-    discovered_leads = [l for l in discovered_leads if l.get("company") not in existing_companies]
+    discovered_leads = [l for l in raw_discovered if l.get("company") not in existing_companies]
+    already_known = raw_count - len(discovered_leads)
 
     if not discovered_leads:
-        return {"business_context": context, "total_leads": 0, "final_leads": []}
+        return {
+            "business_context": context,
+            "pipeline_summary": {
+                "discovered": raw_count,
+                "already_known": already_known,
+                "enrichment_dropped": 0,
+                "processed": 0,
+            },
+            "total_leads": 0,
+            "final_leads": [],
+        }
 
     # Step 2 — Orchestrate: enrich, score, re-enrich if needed, outreach (per lead)
-    final_leads = orchestrate_pipeline(context, discovered_leads)
+    pipeline = orchestrate_pipeline(context, discovered_leads)
 
     # normalize estimated_budget to integer
-    final_leads = clean_final_leads(final_leads)
+    final_leads = clean_final_leads(pipeline["leads"])
 
     final_leads = save_leads(db, final_leads)
 
@@ -64,6 +76,12 @@ def outreach_strategy_pipeline(db: Session = Depends(get_db)):
 
     return {
         "business_context": context,
+        "pipeline_summary": {
+            "discovered": raw_count,
+            "already_known": already_known,
+            "enrichment_dropped": pipeline["dropped"],
+            "processed": len(final_leads),
+        },
         "total_leads": len(final_leads),
         "final_leads": final_leads,
     }
