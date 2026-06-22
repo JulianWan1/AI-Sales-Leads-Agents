@@ -66,3 +66,6 @@ htmlcov/
 # Misc
 
 .cache/
+
+# Claude Code (machine-local)
+.claude/settings.local.json
