@@ -282,7 +282,7 @@ This avoids unnecessary LLM calls for pure if/else logic.
   "interest": "Curated luxury car inventory aligned with their stated expansion into the UK market",
   "estimated_budget": 500000,
   "budget_signal": "High — publicly traded, €200M annual revenue",
-  "purchase_likelihood": "Very High",
+  "purchase_likelihood": "High",
   "qualification_signals": [
     "CEO role with direct purchasing authority",
     "Stated expansion goals align with product fit",
